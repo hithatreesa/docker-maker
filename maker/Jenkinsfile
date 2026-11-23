@@ -51,21 +51,27 @@ pipeline {
 }
 
         stage('Update Manifest Repo') {
-            steps {
-                dir('manifest-workspace') {
-                    git branch: "${MANIFEST_BRANCH}", credentialsId: "${GIT_CREDENTIALS_ID}", url: "${MANIFEST_REPO}"
+    steps {
+        dir('manifest-workspace') {
+            git branch: "${MANIFEST_BRANCH}",
+                credentialsId: "${GIT_CREDENTIALS_ID}",
+                url: "${MANIFEST_REPO}"
 
-                    sh """
-                        # Updates the 'maker' container image tag to your-dockerhub-username/maker:<BUILD_NUMBER>
-                        sed -i '/name: maker/{n;s|image:.*|image: hithatreesathomas/maker:11|}' maker/manifests/deployment.yaml
-                        
-                        git -c user.name='Jenkins CI' -c user.email='jenkins@ci.local' commit -am "chore(manifest): update maker image tag to ${env.BUILD_NUMBER} [skip ci]"
-                        git push origin ${MANIFEST_BRANCH}
-                    """
-                }
+            sh """
+                sed -i '/name: maker/{n;s|image:.*|image: hithatreesathomas/maker:${env.BUILD_NUMBER}|}' maker/manifests/deployment.yaml
+
+                git -c user.name='Jenkins CI' -c user.email='jenkins@ci.local' commit -am "chore(manifest): update maker image tag to ${env.BUILD_NUMBER} [skip ci]"
+            """
+
+            withCredentials([gitUsernamePassword(
+                credentialsId: "${GIT_CREDENTIALS_ID}",
+                gitToolName: 'Default'
+            )]) {
+                sh "git push origin ${MANIFEST_BRANCH}"
             }
         }
     }
+}
 
     post {
         success {
