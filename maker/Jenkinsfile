@@ -50,29 +50,32 @@ pipeline {
     }
 }
 
-        stage('Update Manifest Repo') {
+       stage('Update Manifest Repo') {
     steps {
         dir('manifest-workspace') {
-            git branch: "${MANIFEST_BRANCH}",
-                credentialsId: "${GIT_CREDENTIALS_ID}",
-                url: "${MANIFEST_REPO}"
-
-            sh """
-                sed -i '/name: maker/{n;s|image:.*|image: hithatreesathomas/maker:${env.BUILD_NUMBER}|}' maker/manifests/deployment.yaml
-
-                git -c user.name='Jenkins CI' -c user.email='jenkins@ci.local' commit -am "chore(manifest): update maker image tag to ${env.BUILD_NUMBER} [skip ci]"
-            """
-
-            withCredentials([gitUsernamePassword(
-                credentialsId: "${GIT_CREDENTIALS_ID}",
-                gitToolName: 'Default'
+            withCredentials([usernamePassword(
+                credentialsId: 'github-cred',
+                usernameVariable: 'GH_USER',
+                passwordVariable: 'GH_TOKEN'
             )]) {
-                sh "git push origin ${MANIFEST_BRANCH}"
+                sh """
+                    git remote set-url origin https://\${GH_USER}:\${GH_TOKEN}@github.com/hithatreesa/docker-maker.git
+
+                    git pull --rebase origin main
+
+                    sed -i '/name: maker/{n;s|image:.*|image: hithatreesathomas/maker:${env.BUILD_NUMBER}|}' maker/manifests/deployment.yaml
+
+                    git config user.name "Hitha Treesa Thomas"
+                    git config user.email "YOUR_GITHUB_EMAIL"
+
+                    git commit -am "chore(manifest): update maker image tag to ${env.BUILD_NUMBER} [skip ci]"
+
+                    git push origin main
+                """
             }
         }
     }
 }
-
     post {
         success {
             echo 'Pipeline executed successfully! Manifest repo updated with new image tag.'
