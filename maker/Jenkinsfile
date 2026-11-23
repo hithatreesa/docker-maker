@@ -57,7 +57,7 @@ pipeline {
 
                     sh """
                         # Updates the 'maker' container image tag to your-dockerhub-username/maker:<BUILD_NUMBER>
-                        sed -i '/name: maker/{n;s|image:.*|image: ${DOCKER_IMAGE}:${env.BUILD_NUMBER}|}' k8s/deployment.yaml
+                        sed -i '/name: maker/{n;s|image:.*|image: hithatreesathomas/maker:11|}' maker/manifests/deployment.yaml
                         
                         git -c user.name='Jenkins CI' -c user.email='jenkins@ci.local' commit -am "chore(manifest): update maker image tag to ${env.BUILD_NUMBER} [skip ci]"
                         git push origin ${MANIFEST_BRANCH}
